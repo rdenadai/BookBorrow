@@ -2,9 +2,8 @@ use crate::models::books::{
     ActiveModel as ActiveModelBook, Entity as EntityBook, Model as ModelBook,
 };
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
-use chrono::Utc;
 use log::warn;
-use sea_orm::{ActiveModelTrait, DatabaseConnection, EntityTrait, Set, TryIntoModel};
+use sea_orm::{ActiveModelTrait, DatabaseConnection, EntityTrait, TryIntoModel};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -14,7 +13,7 @@ struct DeletedRecord {
     message: String,
 }
 
-#[get("/books")]
+#[get("")]
 pub async fn get_all(db: web::Data<DatabaseConnection>) -> impl Responder {
     let connection = db.get_ref();
     match EntityBook::find().into_json().all(connection).await {
@@ -26,7 +25,7 @@ pub async fn get_all(db: web::Data<DatabaseConnection>) -> impl Responder {
     }
 }
 
-#[get("/books/{id}")]
+#[get("/{id}")]
 pub async fn get_one(path: web::Path<Uuid>, db: web::Data<DatabaseConnection>) -> impl Responder {
     let book_id = path.into_inner();
     let connection = db.get_ref();
@@ -35,7 +34,11 @@ pub async fn get_one(path: web::Path<Uuid>, db: web::Data<DatabaseConnection>) -
         .one(connection)
         .await
     {
-        Ok(data) => HttpResponse::Ok().json(data),
+        Ok(Some(data)) => HttpResponse::Ok().json(data),
+        Ok(None) => {
+            warn!("Unable to load data (Book::get_one): Book not found");
+            HttpResponse::NotFound().finish()
+        }
         Err(err) => {
             warn!("Unable to load data (Book::get_one): {}", err);
             HttpResponse::NotFound().finish()
@@ -43,13 +46,12 @@ pub async fn get_one(path: web::Path<Uuid>, db: web::Data<DatabaseConnection>) -
     }
 }
 
-#[post("/books")]
+#[post("")]
 pub async fn create(
     book: web::Json<ModelBook>,
     db: web::Data<DatabaseConnection>,
 ) -> impl Responder {
     warn!("Creating book: {:?}", book);
-    println!("Creating book: {:?}", book);
     let connection = db.get_ref();
     match ActiveModelBook::from(book.0).insert(connection).await {
         Ok(data) => HttpResponse::Ok().json(data.try_into_model().unwrap()),
@@ -60,7 +62,7 @@ pub async fn create(
     }
 }
 
-#[put("/books/{id}")]
+#[put("/{id}")]
 pub async fn update(
     path: web::Path<Uuid>,
     book: web::Json<ModelBook>,
@@ -69,13 +71,9 @@ pub async fn update(
     let book_id = path.into_inner();
     let connection = db.get_ref();
     match EntityBook::find_by_id(book_id).one(connection).await {
-        Ok(data) => {
-            let mut model: ActiveModelBook = data.unwrap().into();
-            model.title = Set(book.title.to_owned());
-            model.author = Set(book.author.to_owned());
-            model.year_of_publication = Set(book.year_of_publication.to_owned());
-            model.available = Set(book.available.to_owned());
-            model.updated_at = Set(Some(Utc::now().naive_utc()));
+        Ok(Some(data)) => {
+            let mut model: ActiveModelBook = data.into();
+            model.merge(book.0);
             match model.update(connection).await {
                 Ok(data) => HttpResponse::Ok().json(data),
                 Err(err) => {
@@ -84,6 +82,10 @@ pub async fn update(
                 }
             }
         }
+        Ok(None) => {
+            warn!("Unable to load data (Book::update): Book not found");
+            HttpResponse::NotFound().finish()
+        }
         Err(err) => {
             warn!("Unable to load data (Book::update): {}", err);
             HttpResponse::NotFound().finish()
@@ -91,13 +93,13 @@ pub async fn update(
     }
 }
 
-#[delete("/books/{id}")]
+#[delete("/{id}")]
 pub async fn delete(path: web::Path<Uuid>, db: web::Data<DatabaseConnection>) -> impl Responder {
     let book_id = path.into_inner();
     let connection = db.get_ref();
     match EntityBook::find_by_id(book_id).one(connection).await {
-        Ok(data) => {
-            let model: ActiveModelBook = data.unwrap().into();
+        Ok(Some(data)) => {
+            let model: ActiveModelBook = data.into();
             match model.delete(connection).await {
                 Ok(_) => HttpResponse::Ok().json(DeletedRecord {
                     status: true,
@@ -108,6 +110,10 @@ pub async fn delete(path: web::Path<Uuid>, db: web::Data<DatabaseConnection>) ->
                     HttpResponse::InternalServerError().finish()
                 }
             }
+        }
+        Ok(None) => {
+            warn!("Unable to load data (Book::delete): Book not found");
+            HttpResponse::NotFound().finish()
         }
         Err(err) => {
             warn!("Unable to load data (Book::update): {}", err);

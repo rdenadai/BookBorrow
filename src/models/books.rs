@@ -1,5 +1,5 @@
 use chrono::{NaiveDateTime, Utc};
-use sea_orm::entity::prelude::*;
+use sea_orm::entity::{prelude::*, Set};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -36,3 +36,13 @@ impl Related<super::reservations::Entity> for Entity {
 }
 
 impl ActiveModelBehavior for ActiveModel {}
+
+impl ActiveModel {
+    pub fn merge(&mut self, other: Model) {
+        self.title = Set(other.title.to_owned());
+        self.author = Set(other.author.to_owned());
+        self.year_of_publication = Set(other.year_of_publication.to_owned());
+        self.available = Set(other.available.to_owned());
+        self.updated_at = Set(Some(Utc::now().naive_utc()));
+    }
+}

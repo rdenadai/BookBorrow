@@ -46,11 +46,14 @@ impl Related<super::users::Entity> for Entity {
     }
 }
 
-impl ActiveModelBehavior for ActiveModel {
-    fn new() -> Self {
-        Self {
-            id: Set(Uuid::new_v4()),
-            ..ActiveModelTrait::default()
-        }
+impl ActiveModelBehavior for ActiveModel {}
+
+impl ActiveModel {
+    pub fn merge(&mut self, other: Model) {
+        self.user_id = Set(other.user_id.to_owned());
+        self.book_id = Set(other.book_id.to_owned());
+        self.reservation_date = Set(other.reservation_date.to_owned());
+        self.return_date = Set(other.return_date.to_owned());
+        self.updated_at = Set(Some(Utc::now().naive_utc()));
     }
 }

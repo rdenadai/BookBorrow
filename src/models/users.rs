@@ -41,3 +41,14 @@ impl ActiveModelBehavior for ActiveModel {
         }
     }
 }
+
+impl ActiveModel {
+    pub fn merge(&mut self, other: Model) {
+        self.password = Set(other.password.to_owned());
+        self.active = Set(other.active.to_owned());
+        self.name = Set(other.name.to_owned());
+        self.phone = Set(other.phone.to_owned());
+        self.address = Set(other.address.to_owned());
+        self.updated_at = Set(Some(Utc::now().naive_utc()));
+    }
+}
