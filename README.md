@@ -1,5 +1,17 @@
 # BookBorrow
 
+This is just a small test program to put in practice my Rust learning.
+
+It is a simple REST API which uses **Actix** and **SeaOrm** (and a bunch of other libs).
+
+**ER Diagram**
+
+![ER Diagram](https://raw.githubusercontent.com/rdenadai/BookBorrow/master/assets/er_diagram.png)
+
+**API Endpoints**
+
+![API Endpoints](https://raw.githubusercontent.com/rdenadai/BookBorrow/master/assets/api_endpoints.png)
+
 # Deploy
 
 Just run docker-compose:
