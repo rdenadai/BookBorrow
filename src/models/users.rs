@@ -1,3 +1,4 @@
+use crate::utils::default::default_created_at;
 use chrono::{NaiveDateTime, Utc};
 use sea_orm::{entity::prelude::*, Set};
 use serde::{Deserialize, Serialize};
@@ -8,6 +9,7 @@ use uuid::Uuid;
 pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
     #[serde(skip_deserializing)]
+    #[serde(default = "Uuid::new_v4")]
     pub id: Uuid,
     #[sea_orm(unique)]
     pub email: String,
@@ -16,8 +18,10 @@ pub struct Model {
     pub name: Option<String>,
     pub phone: Option<String>,
     pub address: Option<String>,
-    #[sea_orm(default_value = Utc::now().naive_utc())]
+    #[serde(skip_deserializing)]
+    #[serde(default = "default_created_at")]
     pub created_at: Option<NaiveDateTime>,
+    #[serde(skip_deserializing)]
     pub updated_at: Option<NaiveDateTime>,
 }
 

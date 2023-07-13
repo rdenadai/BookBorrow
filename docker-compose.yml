@@ -12,11 +12,9 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: postgres
   app:
-    build: docker/backend
+    build: .
     ports:
       - "8000:8000"
-    volumes:
-      - .:/app/BookBorrow
     depends_on:
       - psql
     env_file:

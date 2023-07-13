@@ -20,6 +20,8 @@ $> cargo install cargo-watch
 ```
 
 ```bash
+# Run initial migration
+$> sea-orm-cli migrate up
 # Execute the system
 $> cargo watch -q -c -w src/ -x run
 ```

@@ -1,14 +1,15 @@
-mod auth;
 mod constants;
+mod middleware;
 mod models;
 mod routes;
+mod utils;
 
 use actix_web::middleware::Logger;
 use actix_web::{web, App, HttpServer};
 
 use dotenvy::dotenv;
 use migration::{Migrator, MigratorTrait};
-use routes::config::configure;
+use routes::register::configure;
 use sea_orm::Database;
 use std::env;
 

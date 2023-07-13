@@ -1,3 +1,4 @@
+use crate::utils::default::default_created_at;
 use chrono::{NaiveDateTime, Utc};
 use sea_orm::entity::{prelude::*, Set};
 use serde::{Deserialize, Serialize};
@@ -10,17 +11,16 @@ pub struct Model {
     #[serde(skip_deserializing)]
     #[serde(default = "Uuid::new_v4")]
     pub id: Uuid,
+    #[sea_orm(unique)]
     pub title: String,
     pub author: String,
     pub year_of_publication: i32,
     pub available: bool,
+    #[serde(skip_deserializing)]
     #[serde(default = "default_created_at")]
     pub created_at: Option<NaiveDateTime>,
+    #[serde(skip_deserializing)]
     pub updated_at: Option<NaiveDateTime>,
-}
-
-fn default_created_at() -> Option<NaiveDateTime> {
-    Some(Utc::now().naive_utc())
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

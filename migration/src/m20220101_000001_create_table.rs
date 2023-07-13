@@ -6,6 +6,8 @@ pub struct Migration;
 #[async_trait::async_trait]
 impl MigrationTrait for Migration {
     async fn up(&self, manager: &SchemaManager) -> Result<(), DbErr> {
+        let db = manager.get_connection();
+
         manager
             .create_table(
                 Table::create()
@@ -18,7 +20,12 @@ impl MigrationTrait for Migration {
                             .primary_key()
                             .extra("DEFAULT uuid_generate_v4()".to_owned()),
                     )
-                    .col(ColumnDef::new(Books::Title).string().not_null())
+                    .col(
+                        ColumnDef::new(Books::Title)
+                            .string()
+                            .not_null()
+                            .unique_key(),
+                    )
                     .col(ColumnDef::new(Books::Author).string().not_null())
                     .col(
                         ColumnDef::new(Books::YearOfPublication)
@@ -116,6 +123,18 @@ impl MigrationTrait for Migration {
                     .to_owned(),
             )
             .await?;
+
+        // Construct a `Statement` if the SQL contains value bindings
+        // password = admin
+        db.execute_unprepared(
+            "
+            INSERT INTO public.users 
+                (id, email, password, active, created_at) 
+                VALUES 
+                (uuid_generate_v4(), 'admin@localhost', '21232f297a57a5a743894a0e4a801fc3', true, now());
+            ",
+        )
+        .await?;
 
         Ok(())
     }

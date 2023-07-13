@@ -1,5 +1,5 @@
-use crate::models::books::{
-    ActiveModel as ActiveModelBook, Entity as EntityBook, Model as ModelBook,
+use crate::models::reservations::{
+    ActiveModel as ActiveModelReservation, Entity as EntityReservation, Model as ModelReservation,
 };
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
 use log::warn;
@@ -16,10 +16,10 @@ struct DeletedRecord {
 #[get("")]
 pub async fn get_all(db: web::Data<DatabaseConnection>) -> impl Responder {
     let connection = db.get_ref();
-    match EntityBook::find().into_json().all(connection).await {
+    match EntityReservation::find().into_json().all(connection).await {
         Ok(data) => HttpResponse::Ok().json(data),
         Err(err) => {
-            warn!("Unable to load data (Book::get_all): {}", err);
+            warn!("Unable to load data (Reservation::get_all): {}", err);
             HttpResponse::InternalServerError().finish()
         }
     }
@@ -27,20 +27,20 @@ pub async fn get_all(db: web::Data<DatabaseConnection>) -> impl Responder {
 
 #[get("/{id}")]
 pub async fn get_one(path: web::Path<Uuid>, db: web::Data<DatabaseConnection>) -> impl Responder {
-    let book_id = path.into_inner();
+    let reservation_id = path.into_inner();
     let connection = db.get_ref();
-    match EntityBook::find_by_id(book_id)
+    match EntityReservation::find_by_id(reservation_id)
         .into_json()
         .one(connection)
         .await
     {
         Ok(Some(data)) => HttpResponse::Ok().json(data),
         Ok(None) => {
-            warn!("Unable to load data (Book::get_one): Book not found");
+            warn!("Unable to load data (Reservation::get_one): Reservation not found");
             HttpResponse::NotFound().finish()
         }
         Err(err) => {
-            warn!("Unable to load data (Book::get_one): {}", err);
+            warn!("Unable to load data (Reservation::get_one): {}", err);
             HttpResponse::NotFound().finish()
         }
     }
@@ -48,15 +48,18 @@ pub async fn get_one(path: web::Path<Uuid>, db: web::Data<DatabaseConnection>) -
 
 #[post("")]
 pub async fn create(
-    book: web::Json<ModelBook>,
+    reservation: web::Json<ModelReservation>,
     db: web::Data<DatabaseConnection>,
 ) -> impl Responder {
-    warn!("Creating book: {:?}", book);
+    warn!("Creating reservation: {:?}", reservation);
     let connection = db.get_ref();
-    match ActiveModelBook::from(book.0).insert(connection).await {
+    match ActiveModelReservation::from(reservation.0)
+        .insert(connection)
+        .await
+    {
         Ok(data) => HttpResponse::Ok().json(data.try_into_model().unwrap()),
         Err(err) => {
-            warn!("Unable to insert data (Book::create): {}", err);
+            warn!("Unable to insert data (Reservation::create): {}", err);
             HttpResponse::InternalServerError().finish()
         }
     }
@@ -65,29 +68,32 @@ pub async fn create(
 #[put("/{id}")]
 pub async fn update(
     path: web::Path<Uuid>,
-    book: web::Json<ModelBook>,
+    reservation: web::Json<ModelReservation>,
     db: web::Data<DatabaseConnection>,
 ) -> impl Responder {
-    let book_id = path.into_inner();
+    let reservation_id = path.into_inner();
     let connection = db.get_ref();
-    match EntityBook::find_by_id(book_id).one(connection).await {
+    match EntityReservation::find_by_id(reservation_id)
+        .one(connection)
+        .await
+    {
         Ok(Some(data)) => {
-            let mut model: ActiveModelBook = data.into();
-            model.merge(book.0);
+            let mut model: ActiveModelReservation = data.into();
+            model.merge(reservation.0);
             match model.update(connection).await {
                 Ok(data) => HttpResponse::Ok().json(data),
                 Err(err) => {
-                    warn!("Unable to update data (Book::update): {}", err);
+                    warn!("Unable to update data (Reservation::update): {}", err);
                     HttpResponse::InternalServerError().finish()
                 }
             }
         }
         Ok(None) => {
-            warn!("Unable to load data (Book::update): Book not found");
+            warn!("Unable to load data (Reservation::update): Reservation not found");
             HttpResponse::NotFound().finish()
         }
         Err(err) => {
-            warn!("Unable to load data (Book::update): {}", err);
+            warn!("Unable to load data (Reservation::update): {}", err);
             HttpResponse::NotFound().finish()
         }
     }
@@ -95,28 +101,31 @@ pub async fn update(
 
 #[delete("/{id}")]
 pub async fn delete(path: web::Path<Uuid>, db: web::Data<DatabaseConnection>) -> impl Responder {
-    let book_id = path.into_inner();
+    let reservation_id = path.into_inner();
     let connection = db.get_ref();
-    match EntityBook::find_by_id(book_id).one(connection).await {
+    match EntityReservation::find_by_id(reservation_id)
+        .one(connection)
+        .await
+    {
         Ok(Some(data)) => {
-            let model: ActiveModelBook = data.into();
+            let model: ActiveModelReservation = data.into();
             match model.delete(connection).await {
                 Ok(_) => HttpResponse::Ok().json(DeletedRecord {
                     status: true,
                     message: "Record deleted successfully".to_string(),
                 }),
                 Err(err) => {
-                    warn!("Unable to delete data (Book::delete): {}", err);
+                    warn!("Unable to delete data (Reservation::delete): {}", err);
                     HttpResponse::InternalServerError().finish()
                 }
             }
         }
         Ok(None) => {
-            warn!("Unable to load data (Book::delete): Book not found");
+            warn!("Unable to load data (Reservation::delete): Reservation not found");
             HttpResponse::NotFound().finish()
         }
         Err(err) => {
-            warn!("Unable to load data (Book::delete): {}", err);
+            warn!("Unable to load data (Reservation::delete): {}", err);
             HttpResponse::NotFound().finish()
         }
     }

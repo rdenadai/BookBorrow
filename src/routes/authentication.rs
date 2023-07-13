@@ -1,6 +1,8 @@
-use crate::constants::TokenClaims;
 use crate::models::users::{Column as ColumnUser, Entity as EntityUser};
+use crate::utils::default::encrypt_password;
+use crate::utils::token::TokenClaims;
 use actix_web::{post, web, HttpResponse, Responder};
+use base64::{engine::general_purpose, Engine as _};
 use jsonwebtoken::{encode, EncodingKey, Header};
 use log::warn;
 use sea_orm::{ColumnTrait, Condition, DatabaseConnection, EntityTrait, QueryFilter};
@@ -25,7 +27,10 @@ pub async fn login(login: web::Form<Login>, db: web::Data<DatabaseConnection>) -
         .filter(
             Condition::all()
                 .add(ColumnUser::Email.contains(login.email.as_str()))
-                .add(ColumnUser::Password.contains(login.password.as_str())),
+                .add(
+                    ColumnUser::Password
+                        .contains(encrypt_password(login.password.to_string()).as_str()),
+                ),
         )
         .one(connection)
         .await
@@ -57,7 +62,9 @@ pub async fn login(login: web::Form<Login>, db: web::Data<DatabaseConnection>) -
                 ),
             )
             .unwrap();
-            HttpResponse::Ok().json(JwtToken { token: token })
+            HttpResponse::Ok().json(JwtToken {
+                token: general_purpose::STANDARD_NO_PAD.encode(token),
+            })
         }
         Ok(None) => {
             warn!("Unable to login (Authentication::login): User not found");

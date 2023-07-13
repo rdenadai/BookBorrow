@@ -1,4 +1,6 @@
 pub mod authentication;
 pub mod books;
-pub mod config;
 pub mod index;
+pub mod register;
+pub mod reservations;
+pub mod users;

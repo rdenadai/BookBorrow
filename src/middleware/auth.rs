@@ -1,12 +1,10 @@
-use crate::constants::TokenClaims;
+use crate::utils::token::decode_token;
 use actix_web::{
     dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform},
     error::ErrorUnauthorized,
     Error,
 };
 use futures::future::LocalBoxFuture;
-use jsonwebtoken::{decode, DecodingKey, Validation};
-use std::env;
 use std::future::{ready, Ready};
 
 pub struct JwtValidator;
@@ -51,14 +49,9 @@ where
             match token {
                 Some(token) => {
                     let res = fut.await?;
-                    let token_str = token.to_str().unwrap().replace("Bearer ", "");
-                    match decode::<TokenClaims>(
-                        &token_str,
-                        &DecodingKey::from_secret(env::var("JWT_SECRET").unwrap().as_ref()),
-                        &Validation::default(),
-                    ) {
+                    match decode_token(token) {
                         Ok(_) => Ok(res),
-                        Err(_) => Err(ErrorUnauthorized("Invalid or missing authorization token.")),
+                        Err(err) => Err(err),
                     }
                 }
                 None => Err(ErrorUnauthorized("Missing authorization token.")),
