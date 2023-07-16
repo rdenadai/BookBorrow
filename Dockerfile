@@ -1,6 +1,6 @@
-FROM rust:1.70.0-slim-buster
+FROM rust:1.71.0-slim-buster
 
-WORKDIR /app
+WORKDIR app
 COPY . .
 
 RUN apt-get install -y tzdata
@@ -22,7 +22,5 @@ RUN apt-get update && \
     gcc make build-essential wget curl && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
-CMD ["ls","-lah"]
-# RUN cargo install --path .
-# CMD ["BookBorrow"]
-# CMD ["tail", "-f", "/dev/null"]
+RUN cargo install --path .
+CMD ["BookBorrow"]
