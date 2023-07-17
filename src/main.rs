@@ -5,7 +5,7 @@ mod routes;
 mod utils;
 
 use actix_web::middleware::Logger;
-use actix_web::{web, App, HttpServer};
+use actix_web::{middleware::Compress, web::Data, App, HttpServer};
 
 use dotenvy::dotenv;
 use migration::{Migrator, MigratorTrait};
@@ -27,13 +27,13 @@ async fn main() -> std::io::Result<()> {
             println!("Database connected");
             Migrator::up(&db, None).await.unwrap();
 
-            println!("Starting server");
             // Run http server
+            println!("Starting server");
             HttpServer::new(move || {
                 App::new()
+                    .wrap(Compress::default())
                     .wrap(Logger::default())
-                    .wrap(Logger::new("%a %{User-Agent}i"))
-                    .app_data(web::Data::new(db.clone()))
+                    .app_data(Data::new(db.clone()))
                     .configure(configure)
             })
             .bind(("0.0.0.0", 8000))?
